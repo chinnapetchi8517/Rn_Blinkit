@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { View, Button, Image, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useDispatch } from 'react-redux';
-import { addtoCart } from "../../redux/Actions";
+import { addtoCart, cartitem } from "../../redux/Actions";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
 
 import CommonStyles, { BorderRadius, bgcolor, imageView, margin, marginTBRL } from "../../utils/CommonStyles";
 import CartButton from "../../components/Cartbutton";
 import CustomButton from "../../components/CustomButton";
 import { Colors } from "../../utils/Colors";
+import { useSelector } from "react-redux";
+
 const arrdata = [
     { id: '1', text: 'Item 1', name: 'Whole Farm Arhar Dal/Toor Dal Premium', count: 1 },
     { id: '2', text: 'Item 2', name: 'Whole Farm ', count: 1 },
@@ -19,6 +21,7 @@ const arrdata = [
 
 ];
 const Cart = () => {
+    const list = useSelector(state => state.state.Cartitem);
     const dispatch = useDispatch();
     const [isadd, setisAdd] = useState(false)
 
@@ -29,15 +32,15 @@ const Cart = () => {
     const [selectindex, setSelectindex] = useState()
     const [newarrDAta, setnewarrDAta] = useState([])
     const onCLick = (index, item) => {
-        arrdata.map((item, i) => {
+        list.map((item, i) => {
             if (i === index) {
-                arrdata[index].selected = true;
-                arrdata[index].count + 1
+                list[index].selected = true;
+                list[index].count + 1
                 // setCounter(counter + 1)
 
             }
         })
-        setnewarrDAta([...arrdata])
+        setnewarrDAta([...list])
         res.push(item)
         // console.log(arrdata, 'arrdata');
         res.map((itemres, i) => {
@@ -53,7 +56,9 @@ const Cart = () => {
         }
         dispatch(addtoCart(data));
     }
-    useEffect(() => { }, [newarrDAta])
+    useEffect(() => {
+        dispatch(cartitem(newarrDAta))
+    }, [newarrDAta])
     useEffect(() => {
         setnewarrDAta(arrdata);
     }, []);
@@ -72,7 +77,7 @@ const Cart = () => {
     }, [counter])
 
     const Countadd = (itemId, item) => {
-        console.log(item, 'counter');
+        // console.log(item, 'counter');
         // item.count + 1
         setCounter(counter + 1)
 
@@ -90,18 +95,23 @@ const Cart = () => {
     }
     const Countremove = (itemId, item) => {
         var objIndex = res.findIndex((obj => obj.id == item.id));
-        console.log(res[objIndex].count, 'res[objIndex].count');
         if (res[objIndex].count == 1) {
-            res.splice(0, 1)
-            arrdata[objIndex].selected = false
-            arrdata.map((item, i) => {
+
+            var filterarr = res.filter((items) => items.id != item.id)
+            list.map((item, i) => {
                 if (i === itemId) {
-                    arrdata[itemId].selected = false;
+                    list[itemId].selected = false;
 
                 }
             })
-            setnewarrDAta([...arrdata])
-            setres(res)
+            setnewarrDAta([...list])
+            setres(filterarr)
+            var data = {
+                isaddcart: false,
+                count: counter,
+                res: filterarr,
+            }
+            dispatch(addtoCart(data));
         } else {
             var objIndex = res.findIndex((obj => obj.id == item.id));
             if (res[objIndex].count >= 1) {
@@ -118,18 +128,7 @@ const Cart = () => {
 
 
 
-        // var sampleres;
-        // res.map((itemres, i) => {
-        //     if (itemres.count < 1) {
-        //         sampleres = res.splice(0, itemId)
-        //     }
-        //     // if (item.id != itemres.id) {
-        //     //     setCounter(counter - 1)
-        //     //    
-        //     // }
 
-        // })
-        // setres(sampleres);
 
         if (itemCounts[itemId] > 1) {
             setItemCounts({
@@ -142,8 +141,22 @@ const Cart = () => {
         }
 
 
+
     }
-    console.log(counter, 'counter');
+    console.log(counter, res);
+    useEffect(() => {
+        newarrDAta.map((newitem, i) => {
+            res.map((item, index) => {
+                console.log(newitem.id === item.id, "newitem.id === item.id");
+                if (newitem.id === item.id) {
+                    newarrDAta[i].count = res[index].count
+                }
+            })
+
+        })
+
+    }, [])
+
     const renderItem = ({ item, index }) => {
         return (
             <View key={index} style={[CommonStyles.CenterAlign, margin(0, hp(0.8))]}>
@@ -166,6 +179,7 @@ const Cart = () => {
                             </Text>
                         </View>
                     </View>
+
                     <View style={[margin(0, 10),]}>
                         {item.selected ?
                             <CartButton value={itemCounts[index] || '1'} add={() => { Countadd(index, item) }} remove={() => { Countremove(index, item) }}  ></CartButton>
@@ -173,6 +187,8 @@ const Cart = () => {
                         }
                         {/* <CartButton value={itemCounts[index] || item.count} add={() => { Countadd(index) }} remove={() => { setSelectindex(index), Countremove(index) }}  ></CartButton> */}
                     </View>
+
+
 
                 </View>
 

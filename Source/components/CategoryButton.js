@@ -8,7 +8,7 @@ import CartButton from "./Cartbutton";
 import { useSelector } from "react-redux";
 import CommonStyles, { BorderRadius, bgcolor, imageView, margin, marginTBRL } from "../utils/CommonStyles";
 import { useDispatch } from 'react-redux';
-import { addtoCart } from "../redux/Actions";
+import { addtoCart, cartitem } from "../redux/Actions";
 
 const data = [
     { id: '1', text: 'Item 1' },
@@ -29,51 +29,88 @@ const CategoryButton = () => {
     const dispatch = useDispatch();
 
     const isVisible = useSelector(state => state.state.isadditem);
-    //console.log(isVisible, 'uuuuuuuuuuuu');
+    const listdata = useSelector(state => state.state.Cartitem);
+
     const [counter, setCounter] = useState(isVisible.count)
     const [selectindex, setSelectindex] = useState(0)
     const [itemCounts, setItemCounts] = useState({});
-    const [res, setres] = useState([{ id: '0', text: 'Item 0', count: '0' },])
+    const [res, setres] = useState([])
     const [isModalVisible, setModalVisible] = useState(false);
-
+    const [countadd, setcountadd] = useState(false);
+    // useEffect(() => {
+    //     setres(isVisible.res)
+    // }, [res])
     const toggleModal = () => {
         setModalVisible(!isModalVisible);
     };
     const flatList = useRef()
     useEffect(() => {
-        if (counter >= 1) {
-            console.log(res, "ressss");
-            //setres([...res, { id: counter, text: `Item ${counter}` }]);
+        if (countadd == true && counter >= 1) {
+
             var data = {
                 isaddcart: true,
                 count: counter,
-                res: res
+                res: isVisible.res
             }
             dispatch(addtoCart(data));
+            dispatch(cartitem(listdata))
+
         }
 
+
+
     }, [counter])
-    const Countadd = (itemId) => {
-        //console.log(itemCounts, itemCounts[itemId]);
-        setres([...res, { id: counter + 1, text: `Item ${counter + 1}`, count: ` ${counter + 1}` }]);
-        setCounter(counter + 1)
-        setItemCounts({
-            ...itemCounts,
-            [itemId]: (itemCounts[itemId] || 0) + 1,
-        });
+    useEffect(() => {
+
+
+
+    }, [isVisible.isaddcart])
+    const Countadd = (itemId, item) => {
+        setcountadd(true)
+        setCounter(isVisible.count += 1)
+        isVisible.count += 1
+
+        var objIndex = isVisible.res.findIndex((obj => obj.id == item.id));
+        isVisible.res[objIndex].count += 1
+
+        // var objI = listdata.findIndex((obj1 => obj1.id == item.id));
+        // listdata[objI].count += 1
+
+        // console.log(listdata, 'listttttttttttttttttttttttttttttt');
+        setres(isVisible.res)
+
+
 
 
     }
-    const Countremove = (itemId) => {
-        if (itemCounts[itemId] > 0) {
-            setItemCounts({
-                ...itemCounts,
-                [itemId]: itemCounts[itemId] - 1,
-            });
-        }
-        setres([...res, { id: counter, text: `Item ${counter}`, count: ` ${counter}` }]);
-        if (counter > 0) {
+    const Countremove = (itemId, item) => {
+        setCounter(isVisible.count -= 1)
+
+        var objIndex = isVisible.res.findIndex((obj => obj.id == item.id));
+        isVisible.res[objIndex].count -= 1
+        // var obji = listdata.findIndex((obj1 => obj1.id == item.id));
+        // listdata[obji].count -= 1
+        dispatch(cartitem(listdata))
+        setres(isVisible.res)
+        if (counter > 1) {
             setCounter(counter - 1)
+
+        }
+        if (isVisible.res[objIndex].count < 1) {
+            var filterarr = isVisible.res.filter((items) => items.id != item.id)
+            setres(filterarr)
+            if (filterarr.length == 0) {
+                setModalVisible(false)
+
+
+            }
+
+            var data = {
+                isaddcart: false,
+                count: counter,
+                res: filterarr,
+            }
+            dispatch(addtoCart(data));
         }
 
 
@@ -100,7 +137,7 @@ const CategoryButton = () => {
                         </View>
                     </View>
                     <View style={[margin(0, 10),]}>
-                        <CartButton value={itemCounts[index] || item.count} add={() => { Countadd(index) }} remove={() => { setSelectindex(index), Countremove(index) }}  ></CartButton>
+                        <CartButton value={item.count} add={() => { Countadd(index, item) }} remove={() => { Countremove(index, item) }}  ></CartButton>
                     </View>
 
                 </View>
@@ -170,7 +207,6 @@ const CategoryButton = () => {
 
                 </View>
             </Modal>
-
             {isVisible.isaddcart ?
                 <View style={[CommonStyles.ShadowEffet, bgcolor(Colors.white), styles.bottomView]}>
 
